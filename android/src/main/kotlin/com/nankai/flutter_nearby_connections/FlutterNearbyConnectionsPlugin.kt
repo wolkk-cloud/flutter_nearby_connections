@@ -18,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
+import java.lang.Exception
 import kotlin.system.exitProcess
 
 
@@ -55,7 +56,8 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var serviceType: String
     
     private lateinit var connectionsClient: ConnectionsClient
-    private var mBound = false
+    private lateinit var serviceBindManager: ServiceBindManager
+    private var isBind = false
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
@@ -112,12 +114,14 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             stopAdvertisingPeer -> {
                 Log.d("nearby_connections", "stopAdvertisingPeer")
-                mService?.stopAdvertising()
+                serviceBindManager.mService?.stopAdvertising()
+                serviceBindManager.unbindService()
                 result.success(true)
             }
             stopBrowsingForPeers -> {
                 Log.d("nearby_connections", "stopDiscovery")
-                mService?.stopDiscovery()
+                serviceBindManager.mService?.stopDiscovery()
+                serviceBindManager.unbindService()
                 result.success(true)
             }
             invitePeer -> {

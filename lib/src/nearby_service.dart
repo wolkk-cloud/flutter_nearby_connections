@@ -32,6 +32,7 @@ class NearbyService {
   final _dataReceivedController = StreamController<dynamic>.broadcast();
 
   Stream<dynamic> get _dataReceivedStream => _dataReceivedController.stream;
+  String? _deviceName;
 
   /// The class [NearbyService] supports the discovery of services provided by
   /// nearby devices and supports communicating with those services through
@@ -47,17 +48,15 @@ class NearbyService {
   ///
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
-  Future init({
-    @required String serviceType,
-    @required Strategy strategy,
-    String deviceName,
-    @required Function callback
-  }) async {
-    assert(
-      serviceType.length <= 15 &&
-          serviceType != null &&
-          serviceType.isNotEmpty
-    );
+  Future init(
+      {required String serviceType,
+      required Strategy strategy,
+      String? deviceName,
+      required Function callback}) async {
+    _deviceName = deviceName;
+    assert(serviceType.length <= 15 &&
+        //serviceType != null &&
+        serviceType.isNotEmpty);
 
     _channel.setMethodCallHandler((handler) async {
       debugPrint("method: ${handler.method} | arguments: ${handler.arguments}");
@@ -81,7 +80,7 @@ class NearbyService {
     });
 
     int strategyValue = 0;
-    switch(strategy){
+    switch (strategy) {
       case Strategy.P2P_CLUSTER:
         strategyValue = 0;
         break;
@@ -90,6 +89,9 @@ class NearbyService {
         break;
       case Strategy.P2P_POINT_TO_POINT:
         strategyValue = 2;
+        break;
+      case Strategy.Wi_Fi_P2P:
+        strategyValue = 0;
         break;
     }
 
@@ -101,7 +103,7 @@ class NearbyService {
         'strategy': strategyValue,
       },
     );
-    if(Platform.isIOS) {
+    if (Platform.isIOS) {
       await Future.delayed(Duration(seconds: 1));
       callback(true);
     }
@@ -137,7 +139,7 @@ class NearbyService {
   /// Invites a discovered peer to join a nearby connections session.
   /// the [deviceID] is current Device
   FutureOr<dynamic> invitePeer(
-      {@required String deviceID, @required String deviceName}) async {
+      {required String deviceID, @required String? deviceName}) async {
     await _channel.invokeMethod(
       _invitePeer,
       <String, dynamic>{
@@ -149,7 +151,7 @@ class NearbyService {
 
   /// Disconnects the local peer from the session.
   /// the [deviceID] is current Device
-  FutureOr<dynamic> disconnectPeer({@required String deviceID}) async {
+  FutureOr<dynamic> disconnectPeer({required String? deviceID}) async {
     await _channel.invokeMethod(_disconnectPeer, <String, dynamic>{
       'deviceId': deviceID,
     });
@@ -159,6 +161,7 @@ class NearbyService {
   FutureOr<dynamic> sendMessage(String deviceID, String message) async {
     await _channel.invokeMethod(_sendMessage, <String, dynamic>{
       'deviceId': deviceID,
+      if (_deviceName != null) 'senderDeviceId': _deviceName,
       'message': message,
     });
   }
@@ -169,7 +172,7 @@ class NearbyService {
   /// [stateChangedSubscription] will return you a list of [Device].
   /// see [StateChangedCallback]
   StreamSubscription stateChangedSubscription(
-          {@required StateChangedCallback callback}) =>
+      {required StateChangedCallback callback}) =>
       _stateChangedStream.listen(callback);
 
   /// The [dataReceivedSubscription] helps you listen when a peer sends you
@@ -177,6 +180,6 @@ class NearbyService {
   /// It returns a [StreamSubscription] so you can cancel listening at any time.
   /// see [DataReceivedCallback]
   StreamSubscription dataReceivedSubscription(
-          {@required DataReceivedCallback callback}) =>
+      {required DataReceivedCallback callback}) =>
       _dataReceivedStream.listen(callback);
 }

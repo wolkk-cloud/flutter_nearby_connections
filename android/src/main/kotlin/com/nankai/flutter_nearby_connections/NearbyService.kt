@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 
 import android.content.Intent
+import android.media.session.PlaybackState.ACTION_STOP
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -16,6 +17,7 @@ import com.google.android.gms.nearby.connection.*
 import com.nankai.flutter_nearby_connections.event.EventMapping
 import com.nankai.flutter_nearby_connections.event.NearbyServiceEvent
 import io.flutter.plugin.common.MethodChannel
+
 
 const val NOTIFICATION_ID = 101
 const val CHANNEL_ID = "channel"
@@ -91,8 +93,8 @@ class NearbyService : Service() , NearbyServiceEvent {
     private fun getNotification(): Notification {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
-                    CHANNEL_ID, "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                CHANNEL_ID, "Foreground Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
             )
             serviceChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
             val manager = getSystemService(NotificationManager::class.java)
